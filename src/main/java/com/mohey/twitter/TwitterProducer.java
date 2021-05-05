@@ -76,7 +76,7 @@ public class TwitterProducer {
                 System.out.println("Message = " + msg);
                 String topic = "twitter";
 
-                producer.send(new ProducerRecord<String, String>(topic,"twitter_tweets", msg), (metadata, exception)->{
+                producer.send(new ProducerRecord<>(topic, "twitter_tweets", msg), (metadata, exception)->{
                     if(exception != null){
                         System.out.println("Error Happened: " + exception);
                     }
@@ -101,7 +101,7 @@ public class TwitterProducer {
         Hosts hosebirdHosts = new HttpHosts(Constants.STREAM_HOST);
         StatusesFilterEndpoint hosebirdEndpoint = new StatusesFilterEndpoint();
         // Optional: set up some followings and track terms
-        List<String> terms = Lists.newArrayList("pubg","fortnite");
+        List<String> terms = Lists.newArrayList("pubg", "fortnite", "java", "bitcoin", "programming", "javascript");
         hosebirdEndpoint.trackTerms(terms);
 
         // These secrets should be read from a config file
@@ -114,9 +114,7 @@ public class TwitterProducer {
                 .endpoint(hosebirdEndpoint)
                 .processor(new StringDelimitedProcessor(msgQueue));                          // optional: use this if you want to process client events
 
-        Client hosebirdClient = builder.build();
-
-        return hosebirdClient;
+        return builder.build();
 
     }
 
@@ -135,8 +133,11 @@ public class TwitterProducer {
         properties.setProperty(ProducerConfig.RETRIES_CONFIG, Integer.toString(Integer.MAX_VALUE));
         properties.setProperty(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, "5");
 
-        KafkaProducer<String, String> kafkaProducer = new KafkaProducer<>(properties);
+        //High Throughput producer
+        properties.setProperty(ProducerConfig.COMPRESSION_TYPE_CONFIG, "snappy");
+        properties.setProperty(ProducerConfig.LINGER_MS_CONFIG, String.valueOf(20));
+        properties.setProperty(ProducerConfig.BATCH_SIZE_CONFIG, Integer.toString(32*1024));
 
-        return kafkaProducer;
+        return new KafkaProducer<>(properties);
     }
 }
